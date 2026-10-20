@@ -1,21 +1,17 @@
-# app/collectors/pricing.py
-import json, boto3
-from datetime import datetime
+from datetime import datetime, timezone
 from ..db import SessionLocal
 from ..models.market import PricingSnapshot
+from .config import INSTANCE_TYPES
 
-LOCATION = {"us-east-1": "US East (N. Virginia)", "eu-north-1": "EU (Stockholm)",
-            "ap-south-1": "Asia Pacific (Mumbai)"}   # add the rest
-
-def fetch_on_demand(region: str, instance_type: str) -> float | None:
-    client = boto3.client("pricing", region_name="us-east-1")
-    resp = client.get_products(ServiceCode="AmazonEC2", Filters=[
-        {"Type": "TERM_MATCH", "Field": f, "Value": v} for f, v in [
-            ("location", LOCATION[region]), ("instanceType", instance_type),
-            ("operatingSystem", "Linux"), ("tenancy", "Shared"),
-            ("preInstalledSw", "NA"), ("capacitystatus", "Used")]])
-    if not resp["PriceList"]:
-        return None
-    terms = json.loads(resp["PriceList"][0])["terms"]["OnDemand"]
-    dim = next(iter(next(iter(terms.values()))["priceDimensions"].values()))
-    return float(dim["pricePerUnit"]["USD"])
+def collect_pricing(region: str) -> int:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    count = 0
+    with SessionLocal.begin() as s:
+        for itype in INSTANCE_TYPES:
+            price = fetch_on_demand(region, itype)
+            if price is None:
+                continue
+            s.add(PricingSnapshot(region=region, instance_type=itype,
+                                  price=price, fetched_at=now))
+            count += 1
+    return count
