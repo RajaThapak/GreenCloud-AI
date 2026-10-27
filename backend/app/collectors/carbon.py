@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 # Verify zone codes for your token (see the check below).
 ZONE = {"eu-north-1": "SE", "eu-west-1": "IE", "ca-central-1": "CA-ON",
-        "us-east-1": "US-MIDA-PJM", "ap-south-1": "IN-WE"}
+        "us-east-1": "US-MIDA-PJM","us-east-2": "US-MIDA-PJM", "ap-south-1": "IN-WE"}
 
 # Yearly average gCO2/kWh per region. Fill from a published source and cite it.
 STATIC: dict[str, float] = {}
