@@ -1,0 +1,139 @@
+/* src/components/Navbar.css */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--app-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-inner {
+  padding: 0 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ─── Page title ─── */
+.navbar-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* ─── Search pill ─── */
+.navbar-search {
+  flex: 1;
+  max-width: 380px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 13px;
+  color: var(--text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 0 16px 0 36px;
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  -webkit-appearance: none;
+}
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus {
+  border-color: var(--success);
+  box-shadow: var(--shadow-glow);
+}
+.search-input::-webkit-search-cancel-button { display: none; }
+
+/* ─── Actions ─── */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* ─── Circular icon buttons ─── */
+.nav-icon-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  flex-shrink: 0;
+}
+.nav-icon-btn:hover {
+  background: var(--surface-muted);
+  border-color: var(--border-dark);
+  color: var(--text-primary);
+}
+.nav-icon-btn:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+}
+
+.nav-notif-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--card);
+}
+
+/* ─── User avatar ─── */
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--t-fast);
+  flex-shrink: 0;
+}
+.nav-avatar:hover { opacity: 0.85; }
+.nav-avatar:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .navbar-search { display: none; }
+  .navbar-title  { font-size: 16px; }
+}

@@ -1,0 +1,204 @@
+/* src/pages/ReviewPlan.css */
+
+.review-card {
+  padding: 28px 32px;
+}
+
+.review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.review-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.review-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.meets-deadline {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  white-space: nowrap;
+  padding: 6px 12px;
+  background: rgba(0,166,81,0.10);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0,166,81,0.22);
+}
+
+/* ─── Metrics grid ─── */
+.plan-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.plan-metric {
+  padding: 16px 20px;
+  border-right: 1px solid var(--border);
+}
+
+.plan-metric:last-child { border-right: none; }
+
+.plan-metric .metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.plan-metric .metric-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.plan-metric .metric-value.mono {
+  font-size: 16px;
+}
+
+/* ─── Cost / Carbon comparison ─── */
+.comparison-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.cmp-card {
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.03);
+}
+
+.cmp-card .cmp-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.cmp-card .cmp-main {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+.cmp-card .cmp-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ─── Why section ─── */
+.why-section {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.why-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.why-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.why-list li {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.why-list li::before {
+  content: '•';
+  color: var(--green);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─── Alternatives ─── */
+.alt-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.alt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  background: rgba(0,0,0,0.02);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.alt-row:hover {
+  border-color: var(--border-bright);
+  background: rgba(0,0,0,0.04);
+}
+
+.alt-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.alt-cost {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── Actions ─── */
+.review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 800px) {
+  .plan-metrics     { grid-template-columns: repeat(2, 1fr); }
+  .comparison-row   { grid-template-columns: 1fr; }
+  .review-card      { padding: 20px 16px; }
+}

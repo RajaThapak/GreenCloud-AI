@@ -1,0 +1,55 @@
+/* src/App.css */
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══ App shell — pale-gray outer frame ═══ */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--background);
+  padding: 12px;
+  gap: 12px;
+}
+
+/* ═══ Content column (right of sidebar) ═══ */
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface);
+  border-radius: var(--r-shell);
+  overflow: hidden;
+  min-width: 0;
+  min-height: calc(100vh - 24px);
+  margin-left: calc(var(--sidebar-w) + 12px);
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell[data-sidebar-collapsed="true"] .app-content {
+  margin-left: calc(var(--sidebar-w-collapsed) + 12px);
+}
+
+/* Page content scrolls naturally */
+main {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ═══ Mobile ═══ */
+@media (max-width: 768px) {
+  .app-shell {
+    padding: 0;
+    gap: 0;
+  }
+  .app-content {
+    margin-left: 0;
+    border-radius: 0;
+  }
+  .app-shell[data-sidebar-collapsed="true"] .app-content {
+    margin-left: 0;
+  }
+}
