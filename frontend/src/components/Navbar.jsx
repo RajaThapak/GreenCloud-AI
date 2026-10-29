@@ -4,7 +4,8 @@ import { Bell, MessageCircle } from 'lucide-react';
 import './Navbar.css';
 
 const PAGE_TITLES = {
-  '/':          'Dashboard',
+  '/':          'Login',
+  '/dashboard': 'Dashboard',
   '/workloads': 'Workloads',
   '/submit':    'Submit Workload',
   '/reports':   'Reports',

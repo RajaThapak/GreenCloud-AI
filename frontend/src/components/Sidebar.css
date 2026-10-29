@@ -2,8 +2,8 @@
 
 /* ─── Width constants ─── */
 :root {
-  --sidebar-w:           175px;
-  --sidebar-w-collapsed: 60px;
+  --sidebar-w:           195px;
+  --sidebar-w-collapsed: 64px;
 }
 
 /* ─── Sidebar shell ─── */

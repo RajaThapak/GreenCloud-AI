@@ -8,7 +8,7 @@ import {
 import './Sidebar.css';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/workloads', label: 'Workloads', icon: Zap },
   { to: '/reports',   label: 'Reports',   icon: BarChart3 },
   { to: '/settings',  label: 'Settings',  icon: Settings },

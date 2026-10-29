@@ -5,7 +5,10 @@
   top: 0;
   z-index: 90;
   background: var(--app-surface);
+  border: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  border-radius: var(--r-shell);
+  box-shadow: none;
 }
 
 .navbar-inner {
