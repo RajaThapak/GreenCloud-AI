@@ -15,6 +15,7 @@ from app.models.market import (
 from app.models.execution import ExecutionRun, RunAttempt
 from app.models.plan import SchedulerPlan
 from app.models.user import User
+from app.models.core import Organization, User as AppUser, OrgSettings, Workload, AuditLog
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

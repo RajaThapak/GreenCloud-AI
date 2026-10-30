@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     electricitymaps_base_url: str = "https://api.electricitymaps.com/v4"
     auth_secret: str = ""
     auth_token_ttl_minutes: int = 60
+    jwt_secret: str = "change-me-in-env"
+    jwt_expire_minutes: int = 480
+    cors_origins: str = "http://localhost:5173"
+    cloud_provider: str = "fake"
     class Config:
         env_file = ".env"
 
