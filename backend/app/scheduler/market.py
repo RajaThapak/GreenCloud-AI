@@ -20,14 +20,24 @@ def _profiles(rows) -> dict:
     return out
 
 
-def load_market(session: Session, now: datetime) -> MarketSnapshot:
+def load_market(
+    session: Session,
+    now: datetime,
+    selected_regions: list[str] | None = None,
+) -> MarketSnapshot:
     since = now - timedelta(hours=LATEST_LOOKBACK_H)
     since_profile = now - timedelta(days=PROFILE_DAYS)
+    region_filter = selected_regions if selected_regions is not None else None
 
     # latest Spot price per availability zone, then the cheapest zone per region and instance
-    rows = session.execute(
+    spot_query = (
         select(Spot.region, Spot.availability_zone, Spot.instance_type, Spot.spot_price, Spot.observed_at)
         .where(Spot.observed_at >= since, Spot.observed_at <= now)
+    )
+    if region_filter is not None:
+        spot_query = spot_query.where(Spot.region.in_(region_filter))
+    rows = session.execute(
+        spot_query
         .distinct(Spot.region, Spot.availability_zone, Spot.instance_type)
         .order_by(Spot.region, Spot.availability_zone, Spot.instance_type, Spot.observed_at.desc())).all()
     spot: dict = {}
@@ -36,15 +46,21 @@ def load_market(session: Session, now: datetime) -> MarketSnapshot:
         if k not in spot or price < spot[k].price:
             spot[k] = Quote(float(price), ts)
 
+    pricing_query = select(Pricing.region, Pricing.instance_type, Pricing.price, Pricing.fetched_at)
+    if region_filter is not None:
+        pricing_query = pricing_query.where(Pricing.region.in_(region_filter))
     rows = session.execute(
-        select(Pricing.region, Pricing.instance_type, Pricing.price, Pricing.fetched_at)
+        pricing_query
         .distinct(Pricing.region, Pricing.instance_type)
         .order_by(Pricing.region, Pricing.instance_type, Pricing.fetched_at.desc())).all()
     on_demand = {(r, i): Quote(float(p), ts) for r, i, p, ts in rows}
 
-    rows = session.execute(
-        select(Carbon.region, Carbon.intensity, Carbon.source, Carbon.observed_at)
-        .where(Carbon.observed_at >= now - timedelta(hours=48), Carbon.observed_at <= now)).all()
+    carbon_query = select(Carbon.region, Carbon.intensity, Carbon.source, Carbon.observed_at).where(
+        Carbon.observed_at >= now - timedelta(hours=48), Carbon.observed_at <= now
+    )
+    if region_filter is not None:
+        carbon_query = carbon_query.where(Carbon.region.in_(region_filter))
+    rows = session.execute(carbon_query).all()
     best: dict = {}
     for region, g, src, ts in rows:                 # prefer live readings, then the newest
         rank = (src == "electricitymaps", ts)
@@ -53,17 +69,24 @@ def load_market(session: Session, now: datetime) -> MarketSnapshot:
     carbon = {r: v[1] for r, v in best.items()}
 
     hr = func.extract("hour", Spot.observed_at)
+    spot_profile_query = select(Spot.region, Spot.instance_type, hr, func.avg(Spot.spot_price)).where(
+        Spot.observed_at >= since_profile
+    )
+    if region_filter is not None:
+        spot_profile_query = spot_profile_query.where(Spot.region.in_(region_filter))
     spot_profile = _profiles(
         ((r, i), h, a) for r, i, h, a in session.execute(
-            select(Spot.region, Spot.instance_type, hr, func.avg(Spot.spot_price))
-            .where(Spot.observed_at >= since_profile).group_by(Spot.region, Spot.instance_type, hr)).all())
+            spot_profile_query.group_by(Spot.region, Spot.instance_type, hr)).all())
 
     chr_ = func.extract("hour", Carbon.observed_at)
+    carbon_profile_query = select(Carbon.region, chr_, func.avg(Carbon.intensity)).where(
+        Carbon.observed_at >= since_profile, Carbon.source == "electricitymaps"
+    )
+    if region_filter is not None:
+        carbon_profile_query = carbon_profile_query.where(Carbon.region.in_(region_filter))
     carbon_profile = _profiles(
         (r, h, a) for r, h, a in session.execute(
-            select(Carbon.region, chr_, func.avg(Carbon.intensity))
-            .where(Carbon.observed_at >= since_profile, Carbon.source == "electricitymaps")
-            .group_by(Carbon.region, chr_)).all())
+            carbon_profile_query.group_by(Carbon.region, chr_)).all())
 
     return MarketSnapshot(spot=spot, on_demand=on_demand, carbon=carbon,
                           spot_profile=spot_profile, carbon_profile=carbon_profile)

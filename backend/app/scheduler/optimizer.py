@@ -76,6 +76,10 @@ def optimize(spec: WorkloadSpec, market: MarketSnapshot, now: datetime, forecast
             warnings.append(f"No Spot price for {inst} in {region}, so on-demand pricing was used there.")
     if built.skipped_no_carbon:
         warnings.append(f"Skipped {', '.join(sorted(built.skipped_no_carbon))}: no carbon data.")
+    if built.skipped_no_pricing:
+        warnings.append(
+            f"Skipped {', '.join(sorted(built.skipped_no_pricing))}: no pricing data for an eligible instance."
+        )
     warnings += _stale_warnings(market, now, {c.region for c in cands})
 
     spot_q = market.spot.get((best.region, best.instance))

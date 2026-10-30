@@ -144,6 +144,78 @@
   line-height: 1.5;
 }
 
+/* ─── Region selection ─── */
+.region-selection {
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.region-selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.region-selection-header .form-label {
+  margin-bottom: 0;
+}
+
+.region-selection-count {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.region-selection-help {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.region-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.region-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-inner);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+
+.region-checkbox:has(input:checked) {
+  border-color: rgba(54,183,121,0.35);
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.region-checkbox input {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  accent-color: var(--success);
+  cursor: pointer;
+}
+
+.submit-error {
+  margin-top: 14px;
+  color: var(--danger-text);
+  font-size: 12px;
+}
+
 /* ─── Form actions ─── */
 .form-actions {
   display: flex;
@@ -157,6 +229,7 @@
 @media (max-width: 640px) {
   .form-grid { grid-template-columns: 1fr; }
   .opt-modes { grid-template-columns: 1fr; }
+  .region-checkboxes { grid-template-columns: 1fr 1fr; }
   .form-card { padding: 18px 16px; }
   .submit-page { padding: 16px 14px 32px; }
 }

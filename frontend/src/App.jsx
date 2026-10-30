@@ -8,6 +8,7 @@ import Workloads      from './pages/Workloads';
 import SubmitWorkload from './pages/SubmitWorkload';
 import Reports        from './pages/Reports';
 import Settings       from './pages/Settings';
+import Profile        from './pages/Profile';
 import Auth           from './pages/Auth';
 import './App.css';
 
@@ -33,6 +34,7 @@ export default function App() {
                   <Route path="/submit"    element={<SubmitWorkload />} />
                   <Route path="/reports"   element={<Reports />} />
                   <Route path="/settings"  element={<Settings />} />
+                  <Route path="/profile"   element={<Profile />} />
                   <Route path="*"          element={<Dashboard />} />
                 </Routes>
               </div>

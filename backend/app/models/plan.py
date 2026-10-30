@@ -2,7 +2,7 @@
 then run `alembic revision --autogenerate -m "scheduler plan"` and `alembic upgrade head`."""
 from datetime import datetime
 
-from sqlalchemy import JSON, String
+from sqlalchemy import ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..db import Base
@@ -11,6 +11,7 @@ from ..db import Base
 class SchedulerPlan(Base):
     __tablename__ = "scheduler_plan"
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user_account.id"), index=True)
     workload_name: Mapped[str] = mapped_column(String(200))
     mode: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime]

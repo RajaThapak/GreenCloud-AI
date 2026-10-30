@@ -1,5 +1,5 @@
 // src/components/Navbar.jsx
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell, MessageCircle } from 'lucide-react';
 import './Navbar.css';
 
@@ -14,6 +14,7 @@ const PAGE_TITLES = {
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const title = PAGE_TITLES[location.pathname] ?? 'Dashboard';
 
   return (
@@ -33,7 +34,12 @@ export default function Navbar() {
             <MessageCircle size={17} strokeWidth={1.8} />
           </button>
 
-          <button className="nav-avatar" aria-label="User profile" title="Raja Thapak">
+          <button
+            className="nav-avatar"
+            aria-label="Open user profile"
+            title="Raja Thapak"
+            onClick={() => navigate('/profile')}
+          >
             R
           </button>
         </div>

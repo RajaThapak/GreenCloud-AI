@@ -11,6 +11,7 @@ from ..db import Base
 class ExecutionRun(Base):
     __tablename__ = "execution_run"
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("user_account.id"), nullable=True, index=True)
     workload_name: Mapped[str] = mapped_column(String(200))
     image: Mapped[str] = mapped_column(String(300), default="")
     status: Mapped[str] = mapped_column(String(20), default="Scheduled", index=True)

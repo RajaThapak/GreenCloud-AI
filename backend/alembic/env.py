@@ -12,6 +12,9 @@ from app.models.market import (
     PricingSnapshot,
     CarbonIntensityRecord,
 )
+from app.models.execution import ExecutionRun, RunAttempt
+from app.models.plan import SchedulerPlan
+from app.models.user import User
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -1,8 +1,8 @@
 // src/pages/SubmitWorkload.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
-import { REGIONS, INSTANCE_TYPES, GPU_OPTIONS, recommendedPlan } from '../data/fakeData';
+import { ChevronRight, Check } from 'lucide-react';
+import { REGIONS, GPU_OPTIONS } from '../data/fakeData';
 import ReviewPlan from './ReviewPlan';
 import './SubmitWorkload.css';
 
@@ -13,6 +13,35 @@ const OPT_MODES = [
   { id: 'balanced',title: 'Balanced',        desc: 'Weighs cost and carbon equally' },
   { id: 'carbon',  title: 'Carbon priority', desc: 'Lowest emissions that meets the deadline' },
 ];
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+function toReviewPlan(response) {
+  const best = response.best;
+  return {
+    region: best.region,
+    instance: `${best.instance} ${best.purchase}`,
+    startTime: best.start,
+    interruptionRisk: best.risk_label,
+    estCost: best.cost,
+    onDemandCost: response.on_demand_cost ?? best.cost,
+    estCarbon: best.carbon_kg,
+    runNowCarbon: response.run_now_carbon_kg ?? best.carbon_kg,
+    finishBy: best.finish,
+    deadline: response.inputs?.spec?.deadline ?? '',
+    sparehours: response.inputs?.spec?.deadline
+      ? Math.max(0, Math.round(
+          (new Date(response.inputs.spec.deadline).getTime() - new Date(best.finish).getTime()) / 3600000
+        ))
+      : 0,
+    reasons: response.reasons,
+    alternatives: response.alternatives.map((alternative) => ({
+      label: `${alternative.region} · ${alternative.start}`,
+      cost: alternative.cost,
+      carbon: alternative.carbon_kg,
+    })),
+  };
+}
 
 function Stepper({ current }) {
   return (
@@ -39,6 +68,10 @@ function Stepper({ current }) {
 export default function SubmitWorkload() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [selectedRegions, setSelectedRegions] = useState([...REGIONS]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState('');
+  const [plan, setPlan] = useState(null);
 
   const [form, setForm] = useState({
     name: 'BERT fine-tune',
@@ -55,16 +88,64 @@ export default function SubmitWorkload() {
   const set = (field) => (e) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  const handleGenerate = (e) => {
+  const toggleRegion = (region) => (e) => {
+    setSelectedRegions((previous) => (
+      e.target.checked
+        ? [...previous, region]
+        : previous.filter((selected) => selected !== region)
+    ));
+    setError('');
+  };
+
+  const handleGenerate = async (e) => {
     e.preventDefault();
-    setStep(1);
+    if (selectedRegions.length === 0) {
+      setError('Select at least one AWS region before generating a plan.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/workloads/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          image: form.image,
+          vcpu: Number(form.vcpu),
+          memory: Number(form.memory),
+          gpu: form.gpu,
+          duration: Number(form.duration),
+          deadline: form.deadline,
+          priority: form.priority,
+          optMode: form.optMode,
+          selected_regions: selectedRegions,
+        }),
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = Array.isArray(body.detail)
+          ? body.detail.map((item) => item.msg).join(' ')
+          : body.detail;
+        throw new Error(detail || 'Unable to generate a scheduling plan.');
+      }
+
+      setPlan(toReviewPlan(body));
+      setStep(1);
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to generate a scheduling plan.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (step === 1) {
     return (
       <div className="submit-page">
         <Stepper current={1} />
-        <ReviewPlan plan={recommendedPlan} onBack={() => setStep(0)} />
+        <ReviewPlan plan={plan} onBack={() => setStep(0)} />
       </div>
     );
   }
@@ -154,13 +235,39 @@ export default function SubmitWorkload() {
           </div>
         </div>
 
+        <div className="region-selection">
+          <div className="region-selection-header">
+            <label className="form-label">AWS regions</label>
+            <span className="region-selection-count">
+              {selectedRegions.length} of {REGIONS.length} selected
+            </span>
+          </div>
+          <p className="region-selection-help">
+            Choose where GreenCloud AI may schedule this workload.
+          </p>
+          <div className="region-checkboxes">
+            {REGIONS.map((region) => (
+              <label key={region} className="region-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedRegions.includes(region)}
+                  onChange={toggleRegion(region)}
+                />
+                <span>{region}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {error && <p className="submit-error" role="alert">{error}</p>}
+
         <div className="form-actions">
           <button type="button" className="btn btn-ghost" onClick={() => navigate('/')}>
             Cancel
           </button>
-          <button type="submit" id="generate-plan-btn" className="btn btn-primary">
-            Generate plan
-            <ChevronRight size={15} strokeWidth={2.5} />
+          <button type="submit" id="generate-plan-btn" className="btn btn-primary" disabled={isGenerating}>
+            {isGenerating ? 'Generating plan…' : 'Generate plan'}
+            {!isGenerating && <ChevronRight size={15} strokeWidth={2.5} />}
           </button>
         </div>
       </form>

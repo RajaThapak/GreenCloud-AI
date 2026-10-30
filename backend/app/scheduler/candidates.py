@@ -14,6 +14,7 @@ class Built:
     candidates: list = field(default_factory=list)
     fallbacks: set = field(default_factory=set)         # (region, instance) priced on-demand because no Spot data
     skipped_no_carbon: set = field(default_factory=set)
+    skipped_no_pricing: set = field(default_factory=set)
 
 
 def eligible_instances(spec: WorkloadSpec, catalog: dict) -> list[InstanceSpec]:
@@ -39,6 +40,7 @@ def build_candidates(spec, market: MarketSnapshot, fc, now, eligible, buffer: fl
         if region not in market.carbon:
             built.skipped_no_carbon.add(region)
             continue
+        region_has_candidate_price = False
         for inst in eligible:
             key = (region, inst.name)
             if on_demand_only:
@@ -52,6 +54,7 @@ def build_candidates(spec, market: MarketSnapshot, fc, now, eligible, buffer: fl
                 purchase = None
             if purchase is None:
                 continue
+            region_has_candidate_price = True
             chance = 0.0 if purchase == "On-demand" else market.interruption.get(inst.family, DEFAULT_INTERRUPTION)
             for start in starts:
                 cost = run_cost(fc, region, inst, purchase, start, spec.duration_h)
@@ -63,4 +66,6 @@ def build_candidates(spec, market: MarketSnapshot, fc, now, eligible, buffer: fl
                     finish=start + timedelta(hours=spec.duration_h), cost=cost,
                     risk_adj_cost=cost * (1 + chance * lost), carbon_kg=carbon,
                     risk_chance=chance, risk_label=risk_label(chance)))
+        if not region_has_candidate_price:
+            built.skipped_no_pricing.add(region)
     return built
