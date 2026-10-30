@@ -1,16 +1,14 @@
 // src/pages/Dashboard.jsx
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  AreaChart, Area, CartesianGrid
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
   DollarSign, Leaf, CheckCircle, Zap,
   Download, ChevronRight, ArrowUpRight, ArrowDownRight, TrendingUp
 } from 'lucide-react';
-import {
-  dashboardStats, costOverTime, carbonIntensity, recentWorkloads
-} from '../data/fakeData';
+import { api } from '../api';
 import './Dashboard.css';
 
 /* ─── Status helpers ─────────────────────────────────────── */
@@ -76,10 +74,29 @@ function StatCard({ icon: Icon, label, value, change, changeLabel, direction = '
 /* ─── Main Component ─── */
 export default function Dashboard() {
   const navigate = useNavigate();
-  const {
-    costSaved, costSavedPct, carbonAvoided, carbonAvoidedPct,
-    deadlineCompliance, complianceOf, activeWorkloads, awaitingApproval
-  } = dashboardStats;
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    api.dashboard().then(setData).catch((requestError) => setError(requestError.message));
+  }, []);
+  if (error) return <main className="dashboard"><div className="empty-state">{error}</div></main>;
+  if (!data) return <main className="dashboard"><div className="empty-state">Loading dashboard…</div></main>;
+  const costSaved = data.cost_saved;
+  const costSavedPct = data.cost_saved_pct;
+  const carbonAvoided = data.carbon_avoided_kg;
+  const carbonAvoidedPct = data.carbon_avoided_pct;
+  const deadlineCompliance = data.deadlines_met_pct ?? 0;
+  const complianceOf = `${data.deadlines_met} of ${data.deadlines_total} jobs`;
+  const activeWorkloads = data.active_workloads;
+  const awaitingApproval = data.awaiting_approval;
+  const costOverTime = data.months.map((row) => ({ month: row.label, onDemand: row.on_demand, withGC: row.actual }));
+  const recentWorkloads = data.recent.map((row) => ({
+    ...row, estCost: row.est_cost || 0, actCost: row.actual_cost,
+  }));
+  const maxCarbon = Math.max(...data.carbon_now.map((row) => row.g_per_kwh), 1);
+  const carbonIntensity = data.carbon_now.map((row) => ({
+    region: row.region, value: row.g_per_kwh, pct: Math.round(row.g_per_kwh / maxCarbon * 100),
+  }));
 
   return (
     <main className="dashboard" id="dashboard-page">
@@ -186,7 +203,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {recentWorkloads.map(wl => {
-                    const s = STATUS_MAP[wl.status] || STATUS_MAP.running;
+                    const s = STATUS_MAP[wl.status.toLowerCase().replaceAll(' ', '_')] || STATUS_MAP.running;
                     return (
                       <tr key={wl.id}>
                         <td><span className="wl-name">{wl.name}</span></td>
@@ -212,7 +229,7 @@ export default function Dashboard() {
                           {wl.region}
                         </td>
                         <td className="cost-cell">
-                          ${wl.estCost.toFixed(2)} / {wl.actCost ? `$${wl.actCost.toFixed(2)}` : '—'}
+                          ${(wl.estCost || 0).toFixed(2)} / {wl.actCost != null ? `$${wl.actCost.toFixed(2)}` : '—'}
                         </td>
                         <td>
                           <button
@@ -265,21 +282,9 @@ export default function Dashboard() {
               <p className="chart-card-title" style={{ marginBottom: 0 }}>Workload modes</p>
               <TrendingUp size={14} color="var(--text-muted)" />
             </div>
-            {[
-              { label: 'Cost-optimised', pct: 45, color: '#4A90D9' },
-              { label: 'Carbon-aware',   pct: 35, color: '#54C96A' },
-              { label: 'Balanced',       pct: 20, color: '#9B7FD4' },
-            ].map(({ label, pct, color }) => (
-              <div key={label} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>{label}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)' }}>{pct}%</span>
-                </div>
-                <div className="carbon-bar-track">
-                  <div className="carbon-bar-fill" style={{ width: `${pct}%`, background: color }} />
-                </div>
-              </div>
-            ))}
+            <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+              Mode breakdown is not exposed by the current dashboard API.
+            </p>
           </div>
 
         </div>

@@ -1,11 +1,8 @@
 // src/pages/ReviewPlan.jsx
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import './ReviewPlan.css';
 
-export default function ReviewPlan({ plan, onBack }) {
-  const navigate = useNavigate();
-
+export default function ReviewPlan({ plan, onBack, onApprove }) {
   const costSavePct = Math.round(
     ((plan.onDemandCost - plan.estCost) / plan.onDemandCost) * 100
   );
@@ -115,7 +112,7 @@ export default function ReviewPlan({ plan, onBack }) {
         <button
           id="approve-schedule-btn"
           className="btn btn-primary"
-          onClick={() => navigate('/workloads')}
+          onClick={onApprove}
         >
           <CheckCircle2 size={15} />
           Approve and schedule

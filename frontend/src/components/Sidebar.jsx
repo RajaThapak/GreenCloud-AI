@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { to: '/settings',  label: 'Settings',  icon: Settings },
 ];
 
-export default function Sidebar({ collapsed, onCollapse }) {
+export default function Sidebar({ collapsed, onCollapse, user, onLogout }) {
   const navigate = useNavigate();
 
   return (
@@ -118,12 +118,12 @@ export default function Sidebar({ collapsed, onCollapse }) {
           <div className="user-avatar">R</div>
           {!collapsed && (
             <div className="user-info">
-              <p className="user-name">Raja Thapak</p>
-              <p className="user-role">Administrator</p>
+              <p className="user-name">{user?.email || 'GreenCloud user'}</p>
+              <p className="user-role">{user?.role || 'User'}</p>
             </div>
           )}
           {!collapsed && (
-            <button className="icon-btn logout-btn" aria-label="Sign out" title="Sign out">
+            <button className="icon-btn logout-btn" aria-label="Sign out" title="Sign out" onClick={onLogout}>
               <LogOut size={14} />
             </button>
           )}

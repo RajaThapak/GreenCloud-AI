@@ -4,6 +4,7 @@ import {
   ArrowRight, CheckCircle2, Eye, EyeOff, Leaf, LockKeyhole, Mail, UserRound
 } from 'lucide-react';
 import './Auth.css';
+import { api } from '../api';
 
 const BENEFITS = [
   'Schedule workloads when cloud costs are lowest',
@@ -62,7 +63,7 @@ function PasswordField({ id, label, value, onChange, visible, onToggle, autoComp
   );
 }
 
-export default function Auth({ mode = 'login' }) {
+export default function Auth({ mode = 'login', onAuthenticated }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isSignup = mode === 'signup';
@@ -76,20 +77,32 @@ export default function Auth({ mode = 'login' }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const set = (field) => (event) => {
     setError('');
     setForm((previous) => ({ ...previous, [field]: event.target.value }));
   };
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (isSignup && form.password !== form.confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
 
-    navigate('/dashboard', { replace: true });
+    setIsSubmitting(true);
+    try {
+      const response = isSignup
+        ? await api.register({ email: form.email, password: form.password, org_name: form.name || undefined })
+        : await api.login({ email: form.email, password: form.password });
+      onAuthenticated?.(response.user);
+      navigate('/dashboard', { replace: true });
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to authenticate.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const alternatePath = isSignup ? '/login' : '/signup';
@@ -204,8 +217,8 @@ export default function Auth({ mode = 'login' }) {
 
               {error && <p className="auth-error" role="alert">{error}</p>}
 
-              <button type="submit" className="btn btn-primary auth-submit">
-                {isSignup ? 'Create account' : 'Sign in'}
+              <button type="submit" className="btn btn-primary auth-submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Please wait…' : (isSignup ? 'Create account' : 'Sign in')}
                 <ArrowRight size={16} strokeWidth={2.5} />
               </button>
             </form>
@@ -217,7 +230,7 @@ export default function Auth({ mode = 'login' }) {
               </Link>
             </p>
 
-            <p className="auth-demo-note">Frontend demo mode · Connect authentication to continue</p>
+            <p className="auth-demo-note">Securely connected to your GreenCloud workspace</p>
           </div>
         </section>
       </div>

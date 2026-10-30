@@ -12,7 +12,7 @@ const PAGE_TITLES = {
   '/settings':  'Settings',
 };
 
-export default function Navbar() {
+export default function Navbar({ user }) {
   const location = useLocation();
   const navigate = useNavigate();
   const title = PAGE_TITLES[location.pathname] ?? 'Dashboard';
@@ -37,7 +37,7 @@ export default function Navbar() {
           <button
             className="nav-avatar"
             aria-label="Open user profile"
-            title="Raja Thapak"
+            title={user?.email || 'Profile'}
             onClick={() => navigate('/profile')}
           >
             R

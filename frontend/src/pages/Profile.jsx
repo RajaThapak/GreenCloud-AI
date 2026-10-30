@@ -3,10 +3,10 @@ import { ArrowLeft, Camera, Check, KeyRound, Mail, Shield, UserRound } from 'luc
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
-export default function Profile() {
+export default function Profile({ user }) {
   const navigate = useNavigate();
-  const [name, setName] = useState('Raja Thapak');
-  const [email, setEmail] = useState('raja.thapak@example.com');
+  const [name, setName] = useState(user?.email?.split('@')[0] || 'GreenCloud user');
+  const [email, setEmail] = useState(user?.email || '');
   const [saved, setSaved] = useState(false);
 
   function handleSave(event) {
@@ -39,7 +39,7 @@ export default function Profile() {
           </div>
           <h2>{name}</h2>
           <p>{email}</p>
-          <span className="profile-role">Administrator</span>
+          <span className="profile-role">{user?.role || 'User'}</span>
           <div className="profile-status">
             <span className="status-dot" />
             Active account
@@ -70,8 +70,8 @@ export default function Profile() {
           </div>
 
           <div className="profile-meta">
-            <div><span>Role</span><strong>Administrator</strong></div>
-            <div><span>Member since</span><strong>October 2026</strong></div>
+            <div><span>Role</span><strong>{user?.role || 'User'}</strong></div>
+            <div><span>Organization</span><strong>{user?.org_id || '—'}</strong></div>
           </div>
 
           <div className="profile-actions">

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Check } from 'lucide-react';
 import { REGIONS, GPU_OPTIONS } from '../data/fakeData';
+import { api } from '../api';
 import ReviewPlan from './ReviewPlan';
 import './SubmitWorkload.css';
 
@@ -14,10 +15,9 @@ const OPT_MODES = [
   { id: 'carbon',  title: 'Carbon priority', desc: 'Lowest emissions that meets the deadline' },
 ];
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-
 function toReviewPlan(response) {
-  const best = response.best;
+  const plan = response.plan || response;
+  const best = plan.best;
   return {
     region: best.region,
     instance: `${best.instance} ${best.purchase}`,
@@ -28,14 +28,14 @@ function toReviewPlan(response) {
     estCarbon: best.carbon_kg,
     runNowCarbon: response.run_now_carbon_kg ?? best.carbon_kg,
     finishBy: best.finish,
-    deadline: response.inputs?.spec?.deadline ?? '',
-    sparehours: response.inputs?.spec?.deadline
+    deadline: response.deadline ?? plan.inputs?.spec?.deadline ?? '',
+    sparehours: response.deadline ?? plan.inputs?.spec?.deadline
       ? Math.max(0, Math.round(
-          (new Date(response.inputs.spec.deadline).getTime() - new Date(best.finish).getTime()) / 3600000
+          (new Date(response.deadline ?? plan.inputs.spec.deadline).getTime() - new Date(best.finish).getTime()) / 3600000
         ))
       : 0,
-    reasons: response.reasons,
-    alternatives: response.alternatives.map((alternative) => ({
+    reasons: plan.reasons,
+    alternatives: plan.alternatives.map((alternative) => ({
       label: `${alternative.region} · ${alternative.start}`,
       cost: alternative.cost,
       carbon: alternative.carbon_kg,
@@ -72,6 +72,7 @@ export default function SubmitWorkload() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [plan, setPlan] = useState(null);
+  const [workload, setWorkload] = useState(null);
 
   const [form, setForm] = useState({
     name: 'BERT fine-tune',
@@ -80,7 +81,7 @@ export default function SubmitWorkload() {
     memory: '32',
     gpu: '1x A10G',
     duration: '6',
-    deadline: '2026-10-20T18:00',
+    deadline: '2026-12-01T18:00',
     priority: 'Normal',
     optMode: 'cost',
   });
@@ -107,31 +108,19 @@ export default function SubmitWorkload() {
     setIsGenerating(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/api/workloads/plan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          image: form.image,
-          vcpu: Number(form.vcpu),
-          memory: Number(form.memory),
-          gpu: form.gpu,
-          duration: Number(form.duration),
-          deadline: form.deadline,
-          priority: form.priority,
-          optMode: form.optMode,
-          selected_regions: selectedRegions,
-        }),
+      const body = await api.createWorkload({
+        name: form.name,
+        image: form.image,
+        workload_type: 'ML training',
+        duration_h: Number(form.duration),
+        deadline: new Date(form.deadline).toISOString(),
+        mode: form.optMode.charAt(0).toUpperCase() + form.optMode.slice(1),
+        min_vcpu: Number(form.vcpu),
+        min_memory_gb: Number(form.memory),
+        min_gpus: Number.parseInt(form.gpu, 10) || 0,
+        allowed_regions: selectedRegions,
       });
-
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const detail = Array.isArray(body.detail)
-          ? body.detail.map((item) => item.msg).join(' ')
-          : body.detail;
-        throw new Error(detail || 'Unable to generate a scheduling plan.');
-      }
-
+      setWorkload(body);
       setPlan(toReviewPlan(body));
       setStep(1);
     } catch (requestError) {
@@ -145,7 +134,14 @@ export default function SubmitWorkload() {
     return (
       <div className="submit-page">
         <Stepper current={1} />
-        <ReviewPlan plan={plan} onBack={() => setStep(0)} />
+        <ReviewPlan
+          plan={plan}
+          onBack={() => setStep(0)}
+          onApprove={async () => {
+            await api.approve(workload.id);
+            navigate('/workloads');
+          }}
+        />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 // src/pages/Settings.jsx
-import { useState } from 'react';
 import { Save, Key, Globe, Bell, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { api } from '../api';
 import './Settings.css';
 
 const REGIONS_LIST = [
@@ -49,19 +50,41 @@ export default function Settings() {
   const [slackWebhook, setSlackWebhook]     = useState('');
   const [maxRetries, setMaxRetries]         = useState('2');
   const [spotBuffer, setSpotBuffer]         = useState('1');
+  const [budget, setBudget] = useState('500');
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.settings().then((data) => {
+      setBudget(String(data.budget));
+      setDefaultMode(data.default_mode.toLowerCase());
+      setEnabledRegions(new Set(data.regions));
+    }).catch((requestError) => setError(requestError.message));
+  }, []);
 
   function toggleRegion(r) {
     setEnabledRegions(prev => {
       const next = new Set(prev);
-      next.has(r) ? next.delete(r) : next.add(r);
+      if (next.has(r)) next.delete(r);
+      else next.add(r);
       return next;
     });
   }
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault();
-    // Would POST to /api/settings in real implementation
-    alert('Settings saved (fake — no backend connected yet)');
+    setStatus('');
+    setError('');
+    try {
+      await api.updateSettings({
+        budget: Number(budget),
+        default_mode: defaultMode.charAt(0).toUpperCase() + defaultMode.slice(1),
+        regions: [...enabledRegions],
+      });
+      setStatus('Settings saved.');
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   }
 
   return (
@@ -73,6 +96,8 @@ export default function Settings() {
           Save changes
         </button>
       </div>
+      {status && <p className="profile-saved">{status}</p>}
+      {error && <p className="auth-error" role="alert">{error}</p>}
 
       <form onSubmit={handleSave} className="settings-grid" noValidate>
 
@@ -114,6 +139,10 @@ export default function Settings() {
             ))}
           </div>
 
+          <div className="form-group" style={{ marginTop: 18 }}>
+            <label htmlFor="budget" className="form-label">Monthly budget cap (USD)</label>
+            <input id="budget" className="input" type="number" min="1" value={budget} onChange={e => setBudget(e.target.value)} />
+          </div>
           <div className="form-group" style={{ marginTop: 18 }}>
             <label htmlFor="default-mode" className="form-label">Default optimization mode</label>
             <select id="default-mode" className="select" value={defaultMode}

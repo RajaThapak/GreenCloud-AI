@@ -1,10 +1,11 @@
 // src/pages/Reports.jsx
 import {
   AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend
+  Tooltip, ResponsiveContainer
 } from 'recharts';
+import { useEffect, useState } from 'react';
 import { TrendingDown, Leaf, Award } from 'lucide-react';
-import { costOverTime, carbonTrend, spotPriceHistory } from '../data/fakeData';
+import { api } from '../api';
 import './Reports.css';
 
 function ChartTooltip({ active, payload, label }) {
@@ -31,11 +32,26 @@ function ChartTooltip({ active, payload, label }) {
 const COLORS = ['#00a651', '#1565c0', '#e65100', '#6a1b9a', '#0097a7'];
 
 export default function Reports() {
-  const totalSaved = costOverTime.reduce((s, r) => s + (r.onDemand - r.withGC), 0);
-  const avgSavePct = Math.round(
-    costOverTime.reduce((s, r) => s + ((r.onDemand - r.withGC) / r.onDemand) * 100, 0) /
-    costOverTime.length
-  );
+  const [report, setReport] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    Promise.all([api.reports(6), api.dashboard()])
+      .then(([reportData, dashboardData]) => { setReport(reportData); setDashboard(dashboardData); })
+      .catch((requestError) => setError(requestError.message));
+  }, []);
+  if (error) return <main className="reports-page"><div className="empty-state">{error}</div></main>;
+  if (!report || !dashboard) return <main className="reports-page"><div className="empty-state">Loading reports…</div></main>;
+  const totalSaved = report.saved;
+  const avgSavePct = report.saved_pct ?? 0;
+  const costOverTime = report.rows.map((row) => ({
+    month: row.label, onDemand: row.on_demand, withGC: row.actual,
+  }));
+  const carbonTrend = [{
+    time: 'Current',
+    ...Object.fromEntries(dashboard.carbon_now.map((row) => [row.region, row.g_per_kwh])),
+  }];
+  const spotPriceHistory = [];
 
   return (
     <main className="reports-page" id="reports-page">
@@ -69,7 +85,7 @@ export default function Reports() {
               <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em', fontWeight:600 }}>
                 Carbon avoided (6 mo)
               </p>
-              <p style={{ fontSize:26, fontWeight:800, letterSpacing:'-0.02em' }}>1,092 kg</p>
+              <p style={{ fontSize:26, fontWeight:800, letterSpacing:'-0.02em' }}>{dashboard.carbon_avoided_kg} kg</p>
               <p style={{ fontSize:12, color:'var(--teal)', marginTop:2 }}>CO₂ equivalent</p>
             </div>
           </div>
@@ -84,8 +100,8 @@ export default function Reports() {
               <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em', fontWeight:600 }}>
                 Jobs scheduled optimally
               </p>
-              <p style={{ fontSize:26, fontWeight:800, letterSpacing:'-0.02em' }}>144</p>
-              <p style={{ fontSize:12, color:'var(--amber)', marginTop:2 }}>98.6% deadline compliance</p>
+              <p style={{ fontSize:26, fontWeight:800, letterSpacing:'-0.02em' }}>{dashboard.deadlines_met}</p>
+              <p style={{ fontSize:12, color:'var(--amber)', marginTop:2 }}>{dashboard.deadlines_met_pct ?? 0}% deadline compliance</p>
             </div>
           </div>
         </div>
@@ -130,9 +146,9 @@ export default function Reports() {
               <XAxis dataKey="time" tick={{ fill:'#8b98a9', fontSize:12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill:'#8b98a9', fontSize:11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
-              <Line type="monotone" dataKey="eu-north-1"   stroke="#00e676" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="ca-central-1" stroke="#00bcd4" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="eu-west-1"    stroke="#ffab40" strokeWidth={2} dot={false} />
+              {dashboard.carbon_now.slice(0, 3).map((row, i) => (
+                <Line key={row.region} type="monotone" dataKey={row.region} stroke={COLORS[i]} strokeWidth={2} dot />
+              ))}
             </LineChart>
           </ResponsiveContainer>
           <div style={{ display:'flex', gap:16, flexWrap:'wrap', marginTop:12 }}>
@@ -148,7 +164,8 @@ export default function Reports() {
         {/* Spot price history */}
         <div className="chart-card glass fade-in">
           <h2 className="chart-title">Spot price history — g5.xlarge ($/hr)</h2>
-          <ResponsiveContainer width="100%" height={240}>
+          <div className="empty-state" style={{ minHeight: 240 }}>Spot price history is not exposed by the current backend API.</div>
+          {spotPriceHistory.length > 0 && <ResponsiveContainer width="100%" height={240}>
             <LineChart data={spotPriceHistory}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="time" tick={{ fill:'#8b98a9', fontSize:12 }} axisLine={false} tickLine={false} />
@@ -160,7 +177,7 @@ export default function Reports() {
                       strokeWidth={2} dot={false} />
               ))}
             </LineChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
           <div style={{ display:'flex', gap:16, flexWrap:'wrap', marginTop:12 }}>
             {['eu-north-1','us-east-1','ca-central-1'].map((r, i) => (
               <span key={r} style={{ fontSize:11, color:'var(--text-secondary)', display:'flex', alignItems:'center', gap:5 }}>
